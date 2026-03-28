@@ -10,7 +10,7 @@ export default function StudentListPage() {
   const navigate = useNavigate()
   const [students, setStudents] = useState<StudentSummaryResponse[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState({ grade: '', classNum: '', studentNumber: '' })
+  const [filter, setFilter] = useState({ name: '', grade: '', classNum: '', studentNumber: '' })
   const [showRegister, setShowRegister] = useState(false)
   const [regForm, setRegForm] = useState<RegisterStudentRequest & { passwordInput: string }>({
     username: '', passwordInput: '', password: '', name: '', email: '',
@@ -23,6 +23,7 @@ export default function StudentListPage() {
     setLoading(true)
     try {
       const params = {
+        name: filter.name || undefined,
         grade: filter.grade ? Number(filter.grade) : undefined,
         classNum: filter.classNum ? Number(filter.classNum) : undefined,
         studentNumber: filter.studentNumber ? Number(filter.studentNumber) : undefined,
@@ -89,6 +90,22 @@ export default function StudentListPage() {
         className="rounded-xl p-5 mb-6 flex gap-4 items-end flex-wrap"
         style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 8px rgba(9, 20, 38, 0.04)' }}
       >
+        {/* CEW-52: 이름 검색 */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#45474C', letterSpacing: '0.05em' }}>이름</label>
+          <input
+            type="text"
+            value={filter.name}
+            onChange={(e) => setFilter((f) => ({ ...f, name: e.target.value }))}
+            onKeyDown={(e) => e.key === 'Enter' && fetchStudents()}
+            placeholder="학생 이름"
+            className="w-32 px-3 py-2.5 rounded text-sm outline-none transition-all"
+            style={{ backgroundColor: '#F5F3F4', border: 'none', borderBottom: '2px solid transparent', color: '#1B1B1D' }}
+            onFocus={(e) => { e.currentTarget.style.borderBottomColor = '#0058BE'; e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+            onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'transparent'; e.currentTarget.style.backgroundColor = '#F5F3F4' }}
+          />
+        </div>
+        {/* CEW-53: 학년/반/번호 필터 */}
         {[
           { key: 'grade', label: '학년', placeholder: '예: 1' },
           { key: 'classNum', label: '반', placeholder: '예: 3' },
@@ -102,16 +119,10 @@ export default function StudentListPage() {
               onChange={(e) => setFilter((f) => ({ ...f, [key]: e.target.value }))}
               placeholder={placeholder}
               min={1}
-              className="w-28 px-3 py-2.5 rounded text-sm outline-none transition-all"
+              className="w-24 px-3 py-2.5 rounded text-sm outline-none transition-all"
               style={{ backgroundColor: '#F5F3F4', border: 'none', borderBottom: '2px solid transparent', color: '#1B1B1D' }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderBottomColor = '#0058BE'
-                e.currentTarget.style.backgroundColor = '#FFFFFF'
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderBottomColor = 'transparent'
-                e.currentTarget.style.backgroundColor = '#F5F3F4'
-              }}
+              onFocus={(e) => { e.currentTarget.style.borderBottomColor = '#0058BE'; e.currentTarget.style.backgroundColor = '#FFFFFF' }}
+              onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'transparent'; e.currentTarget.style.backgroundColor = '#F5F3F4' }}
             />
           </div>
         ))}
@@ -126,7 +137,7 @@ export default function StudentListPage() {
             검색
           </button>
           <button
-            onClick={() => { setFilter({ grade: '', classNum: '', studentNumber: '' }); fetchStudents() }}
+            onClick={() => { setFilter({ name: '', grade: '', classNum: '', studentNumber: '' }); fetchStudents() }}
             className="px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
             style={{ backgroundColor: '#EAE7E9', color: '#45474C' }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#DCD9DB' }}
