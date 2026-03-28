@@ -42,6 +42,28 @@ const teacherNav = [
   },
 ]
 
+const studentNav = [
+  {
+    to: '/',
+    label: '내 학습 현황',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+      </svg>
+    ),
+  },
+  {
+    to: '/profile',
+    label: '내 프로필',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="4" /><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+      </svg>
+    ),
+  },
+]
+
 const parentNav = [
   {
     to: '/',
@@ -73,6 +95,8 @@ export default function Sidebar() {
   const nav =
     user?.role === 'TEACHER'
       ? teacherNav
+      : user?.role === 'STUDENT'
+      ? studentNav
       : user?.role === 'PARENT'
       ? parentNav
       : adminNav

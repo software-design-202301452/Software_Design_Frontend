@@ -14,6 +14,7 @@ import SubjectPage from './pages/teacher/SubjectPage'
 import SharedCounselingPage from './pages/teacher/SharedCounselingPage'
 
 import ParentDashboardPage from './pages/parent/ParentDashboardPage'
+import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import AdminPage from './pages/admin/AdminPage'
 import ProfilePage from './pages/ProfilePage'
 
@@ -43,6 +44,7 @@ export default function App() {
           element={
             <RoleDispatch
               teacher={<DashboardPage />}
+              student={<StudentDashboardPage />}
               parent={<ParentDashboardPage />}
               admin={<AdminPage />}
             />
@@ -90,15 +92,18 @@ export default function App() {
 
 function RoleDispatch({
   teacher,
+  student,
   parent,
   admin,
 }: {
   teacher: React.ReactNode
+  student: React.ReactNode
   parent: React.ReactNode
   admin: React.ReactNode
 }) {
   const { user } = useAuth()
   if (user?.role === 'TEACHER') return <>{teacher}</>
+  if (user?.role === 'STUDENT') return <>{student}</>
   if (user?.role === 'PARENT') return <>{parent}</>
   if (user?.role === 'ADMIN') return <>{admin}</>
   return <Navigate to="/login" replace />
