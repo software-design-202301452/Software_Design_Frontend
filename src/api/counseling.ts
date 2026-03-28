@@ -16,11 +16,14 @@ export const counselingApi = {
   deleteCounseling: (counselingId: number) =>
     api.delete<ApiResponse<null>>(`/counselings/${counselingId}`),
 
-  getCounselingsByStudent: (studentId: number) =>
-    api.get<ApiResponse<CounselingResponse[]>>(`/counselings/student/${studentId}`),
+  getCounselingsByStudent: (studentId: number, params?: { from?: string; to?: string }) =>
+    api.get<ApiResponse<CounselingResponse[]>>(`/counselings/student/${studentId}`, { params }),
 
   getSharedCounselings: () =>
     api.get<ApiResponse<CounselingResponse[]>>('/counselings/shared'),
+
+  searchCounselings: (params?: { keyword?: string; from?: string; to?: string; studentId?: number; teacherId?: number }) =>
+    api.get<ApiResponse<CounselingResponse[]>>('/counselings/search', { params }),
 
   shareCounseling: (counselingId: number) =>
     api.patch<ApiResponse<CounselingResponse>>(`/counselings/${counselingId}/share`),

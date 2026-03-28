@@ -11,7 +11,7 @@ export const studentApi = {
   registerStudent: (data: RegisterStudentRequest) =>
     api.post<ApiResponse<StudentSummaryResponse>>('/students', data),
 
-  getStudents: (params?: { grade?: number; classNum?: number; studentNumber?: number }) =>
+  getStudents: (params?: { name?: string; grade?: number; classNum?: number; studentNumber?: number }) =>
     api.get<ApiResponse<StudentSummaryResponse[]>>('/students', { params }),
 
   getStudentDetail: (studentId: number) =>
