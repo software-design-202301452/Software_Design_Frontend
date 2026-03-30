@@ -1,6 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
+interface SidebarProps {
+  unreadCount?: number
+  onNotificationRead?: () => void
+}
+
 const teacherNav = [
   {
     to: '/',
@@ -89,7 +94,7 @@ const adminNav = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ unreadCount = 0 }: SidebarProps) {
   const { user, logout } = useAuth()
 
   const nav =
@@ -178,6 +183,41 @@ export default function Sidebar() {
       {/* 하단 메뉴 */}
       <div className="px-3 pb-4 space-y-0.5">
         <div style={{ height: '1px', backgroundColor: '#1E293B', margin: '8px 12px' }} />
+
+        {/* 알림 */}
+        <NavLink
+          to="/notifications"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              isActive ? 'text-white bg-[#0058BE]' : 'text-[#8590A6] hover:text-white hover:bg-white/5'
+            }`
+          }
+        >
+          <div className="relative flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {unreadCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 rounded-full text-[10px] font-bold flex items-center justify-center px-1"
+                style={{ backgroundColor: '#BA1A1A', color: '#FFFFFF' }}
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </div>
+          알림
+          {unreadCount > 0 && (
+            <span
+              className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full"
+              style={{ backgroundColor: '#BA1A1A', color: '#FFFFFF' }}
+            >
+              {unreadCount}
+            </span>
+          )}
+        </NavLink>
+
         <NavLink
           to="/profile"
           className={({ isActive }) =>

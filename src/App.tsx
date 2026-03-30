@@ -17,6 +17,7 @@ import ParentDashboardPage from './pages/parent/ParentDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
 import AdminPage from './pages/admin/AdminPage'
 import ProfilePage from './pages/ProfilePage'
+import NotificationsPage from './pages/NotificationsPage'
 
 function RoleRoute({ roles, children }: { roles: string[]; children: React.ReactNode }) {
   const { user } = useAuth()
@@ -35,8 +36,9 @@ export default function App() {
 
       {/* Protected routes */}
       <Route element={<Layout />}>
-        {/* Profile - all roles */}
+        {/* 공통 라우트 - 모든 역할 */}
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Teacher routes */}
         <Route

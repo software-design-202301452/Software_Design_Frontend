@@ -1,9 +1,30 @@
+import { useState, useEffect } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from './Sidebar'
+import { notificationApi } from '../../api/notification'
 
 export default function Layout() {
   const { user, isLoading } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await notificationApi.getUnreadCount()
+        setUnreadCount(res.data.data.count)
+      } catch {
+        // 폴링 오류는 무시 (네트워크 일시 오류 등)
+      }
+    }
+
+    fetchUnreadCount()
+    // 30초마다 미읽음 수 폴링
+    const interval = setInterval(fetchUnreadCount, 30_000)
+    return () => clearInterval(interval)
+  }, [user])
 
   if (isLoading) {
     return (
@@ -25,7 +46,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#FBF8FA' }}>
-      <Sidebar />
+      <Sidebar unreadCount={unreadCount} onNotificationRead={() => setUnreadCount(0)} />
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>

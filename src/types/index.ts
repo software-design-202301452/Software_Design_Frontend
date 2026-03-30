@@ -366,6 +366,22 @@ export interface AdminCreateParentRequest {
   phone?: string
 }
 
+// ─── Notification ─────────────────────────────────────────────────────────────
+export interface NotificationResponse {
+  id: number
+  receiverUsername: string
+  receiverRole: UserRole
+  notificationType: NotificationType
+  message: string
+  referenceId?: number
+  isRead: boolean
+  createdAt: string
+}
+
+export interface UnreadCountResponse {
+  count: number
+}
+
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 export interface AuthUser {
   username: string
