@@ -382,6 +382,62 @@ export interface UnreadCountResponse {
   count: number
 }
 
+// ─── Report ───────────────────────────────────────────────────────────────────
+export interface GradeItemDto {
+  subjectName: string
+  year: number
+  semester: number
+  score: number
+  totalScore: number
+  average: number
+  gradeLevel: GradeLevel
+}
+
+export interface GradeReportResponse {
+  studentId: number
+  studentName: string
+  grade: number
+  classNum: number
+  studentNumber: number
+  generatedAt: string
+  grades: GradeItemDto[]
+  subjectAverages: Record<string, number>
+  overallAverage: number
+}
+
+export interface CounselingItemDto {
+  counselingDate: string
+  teacherName: string
+  content: string
+  nextPlan?: string
+  nextCounselingDate?: string
+}
+
+export interface CounselingReportResponse {
+  studentId: number
+  studentName: string
+  generatedAt: string
+  totalCount: number
+  counselings: CounselingItemDto[]
+}
+
+export interface FeedbackItemDto {
+  feedbackType: FeedbackType
+  teacherName: string
+  content: string
+  published: boolean
+  createdAt: string
+}
+
+export interface FeedbackReportResponse {
+  studentId: number
+  studentName: string
+  generatedAt: string
+  totalCount: number
+  typeCountMap: Record<string, number>
+  feedbacks: FeedbackItemDto[]
+}
+
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 export interface AuthUser {
   username: string

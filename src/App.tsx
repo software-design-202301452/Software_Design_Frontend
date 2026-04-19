@@ -12,6 +12,7 @@ import StudentListPage from './pages/teacher/StudentListPage'
 import StudentDetailPage from './pages/teacher/StudentDetailPage'
 import SubjectPage from './pages/teacher/SubjectPage'
 import SharedCounselingPage from './pages/teacher/SharedCounselingPage'
+import ReportPage from './pages/teacher/ReportPage'
 
 import ParentDashboardPage from './pages/parent/ParentDashboardPage'
 import StudentDashboardPage from './pages/student/StudentDashboardPage'
@@ -81,6 +82,14 @@ export default function App() {
           element={
             <RoleRoute roles={['TEACHER']}>
               <SharedCounselingPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RoleRoute roles={['TEACHER']}>
+              <ReportPage />
             </RoleRoute>
           }
         />
