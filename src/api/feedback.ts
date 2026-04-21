@@ -26,8 +26,8 @@ export const feedbackApi = {
     studentId?: number
     teacherId?: number
     feedbackType?: string
-    startDate?: string
-    endDate?: string
+    from?: string
+    to?: string
   }) =>
     api.get<ApiResponse<FeedbackResponse[]>>('/feedbacks', { params }),
 }

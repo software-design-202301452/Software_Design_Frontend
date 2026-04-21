@@ -69,6 +69,43 @@ export default function StudentDetailPage() {
 
   const [error, setError] = useState('')
 
+  // 필터 상태
+  const [gradeFilter, setGradeFilter] = useState<{ subjectId: string; year: string; semester: string }>({ subjectId: '', year: '', semester: '' })
+  const [counselingFilter, setCounselingFilter] = useState<{ from: string; to: string }>({ from: '', to: '' })
+  const [feedbackFilter, setFeedbackFilter] = useState<{ feedbackType: string; from: string; to: string }>({ feedbackType: '', from: '', to: '' })
+
+  const loadGrades = useCallback(async (filter?: { subjectId: string; year: string; semester: string }) => {
+    const f = filter ?? gradeFilter
+    const params = {
+      subjectId: f.subjectId ? Number(f.subjectId) : undefined,
+      year: f.year ? Number(f.year) : undefined,
+      semester: f.semester ? Number(f.semester) : undefined,
+    }
+    const hasFilter = params.subjectId || params.year || params.semester
+    const res = hasFilter
+      ? await gradeApi.getGradesByFilter(id, params)
+      : await gradeApi.getGradesByStudent(id)
+    setGrades(res.data.data)
+  }, [id, gradeFilter])
+
+  const loadCounselings = useCallback(async (filter?: { from: string; to: string }) => {
+    const f = filter ?? counselingFilter
+    const params = { from: f.from || undefined, to: f.to || undefined }
+    const res = await counselingApi.getCounselingsByStudent(id, params)
+    setCounselings(res.data.data)
+  }, [id, counselingFilter])
+
+  const loadFeedbacks = useCallback(async (filter?: { feedbackType: string; from: string; to: string }) => {
+    const f = filter ?? feedbackFilter
+    const res = await feedbackApi.getFeedbacks({
+      studentId: id,
+      feedbackType: f.feedbackType || undefined,
+      from: f.from || undefined,
+      to: f.to || undefined,
+    })
+    setFeedbacks(res.data.data)
+  }, [id, feedbackFilter])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -129,7 +166,7 @@ export default function StudentDetailPage() {
       }
       setGradeModal(false)
       setEditGrade(null)
-      load()
+      loadGrades()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '저장 실패')
     }
@@ -138,7 +175,7 @@ export default function StudentDetailPage() {
   const handleDeleteGrade = async (gId: number) => {
     if (!confirm('성적을 삭제하시겠습니까?')) return
     await gradeApi.deleteGrade(gId)
-    load()
+    loadGrades()
   }
 
   const handleSaveRecord = async () => {
@@ -167,7 +204,7 @@ export default function StudentDetailPage() {
       }
       setCounselingModal(false)
       setEditCounseling(null)
-      load()
+      loadCounselings()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '저장 실패')
     }
@@ -176,13 +213,13 @@ export default function StudentDetailPage() {
   const handleDeleteCounseling = async (cId: number) => {
     if (!confirm('상담 내역을 삭제하시겠습니까?')) return
     await counselingApi.deleteCounseling(cId)
-    load()
+    loadCounselings()
   }
 
   const handleToggleShare = async (c: CounselingResponse) => {
     if (c.shared) await counselingApi.unshareCounseling(c.id)
     else await counselingApi.shareCounseling(c.id)
-    load()
+    loadCounselings()
   }
 
   const handleSaveFeedback = async () => {
@@ -195,7 +232,7 @@ export default function StudentDetailPage() {
       }
       setFeedbackModal(false)
       setEditFeedback(null)
-      load()
+      loadFeedbacks()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '저장 실패')
     }
@@ -204,13 +241,13 @@ export default function StudentDetailPage() {
   const handleDeleteFeedback = async (fId: number) => {
     if (!confirm('피드백을 삭제하시겠습니까?')) return
     await feedbackApi.deleteFeedback(fId)
-    load()
+    loadFeedbacks()
   }
 
   const handleTogglePublish = async (f: FeedbackResponse) => {
     if (f.published) await feedbackApi.unpublishFeedback(f.id)
     else await feedbackApi.publishFeedback(f.id)
-    load()
+    loadFeedbacks()
   }
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
@@ -332,19 +369,74 @@ export default function StudentDetailPage() {
 
       {tab === 'grades' && (
         <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => {
-                setEditGrade(null)
-                setGradeForm({ subjectId: String(subjects[0]?.id ?? ''), year: new Date().getFullYear(), semester: 1, score: 0, totalScore: 100, note: '' })
-                setGradeModal(true)
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
-              style={btnPrimary}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              성적 등록
-            </button>
+          {/* 성적 필터 */}
+          <div className="rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 8px rgba(9,20,38,0.04)' }}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>과목</label>
+              <select
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D', backgroundColor: '#FFFFFF' }}
+                value={gradeFilter.subjectId}
+                onChange={(e) => setGradeFilter((f) => ({ ...f, subjectId: e.target.value }))}
+              >
+                <option value="">전체 과목</option>
+                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>년도</label>
+              <input
+                type="number"
+                className="rounded-lg px-3 py-2 text-sm border w-24"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D' }}
+                placeholder="예) 2025"
+                value={gradeFilter.year}
+                onChange={(e) => setGradeFilter((f) => ({ ...f, year: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>학기</label>
+              <select
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D', backgroundColor: '#FFFFFF' }}
+                value={gradeFilter.semester}
+                onChange={(e) => setGradeFilter((f) => ({ ...f, semester: e.target.value }))}
+              >
+                <option value="">전체</option>
+                <option value="1">1학기</option>
+                <option value="2">2학기</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadGrades(gradeFilter)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >검색</button>
+              <button
+                onClick={() => {
+                  const reset = { subjectId: '', year: '', semester: '' }
+                  setGradeFilter(reset)
+                  loadGrades(reset)
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnSecondary}
+              >초기화</button>
+            </div>
+            <div className="flex justify-end flex-1">
+              <button
+                onClick={() => {
+                  setEditGrade(null)
+                  setGradeForm({ subjectId: String(subjects[0]?.id ?? ''), year: new Date().getFullYear(), semester: 1, score: 0, totalScore: 100, note: '' })
+                  setGradeModal(true)
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                성적 등록
+              </button>
+            </div>
           </div>
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 12px rgba(9,20,38,0.06)' }}>
             <table className="w-full">
@@ -432,15 +524,54 @@ export default function StudentDetailPage() {
 
       {tab === 'counselings' && (
         <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => { setEditCounseling(null); setCounselingForm({ counselingDate: '', content: '', nextPlan: '', nextCounselingDate: '' }); setCounselingModal(true) }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
-              style={btnPrimary}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              상담 등록
-            </button>
+          {/* 상담 필터 */}
+          <div className="rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 8px rgba(9,20,38,0.04)' }}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>시작일</label>
+              <input
+                type="date"
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D' }}
+                value={counselingFilter.from}
+                onChange={(e) => setCounselingFilter((f) => ({ ...f, from: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>종료일</label>
+              <input
+                type="date"
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D' }}
+                value={counselingFilter.to}
+                onChange={(e) => setCounselingFilter((f) => ({ ...f, to: e.target.value }))}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadCounselings(counselingFilter)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >검색</button>
+              <button
+                onClick={() => {
+                  const reset = { from: '', to: '' }
+                  setCounselingFilter(reset)
+                  loadCounselings(reset)
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnSecondary}
+              >초기화</button>
+            </div>
+            <div className="flex justify-end flex-1">
+              <button
+                onClick={() => { setEditCounseling(null); setCounselingForm({ counselingDate: '', content: '', nextPlan: '', nextCounselingDate: '' }); setCounselingModal(true) }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                상담 등록
+              </button>
+            </div>
           </div>
           <div className="space-y-4">
             {counselings.length === 0 ? (
@@ -485,15 +616,66 @@ export default function StudentDetailPage() {
 
       {tab === 'feedbacks' && (
         <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => { setEditFeedback(null); setFeedbackForm({ feedbackType: 'GENERAL', content: '' }); setFeedbackModal(true) }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
-              style={btnPrimary}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              피드백 작성
-            </button>
+          {/* 피드백 필터 */}
+          <div className="rounded-xl p-4 mb-4 flex flex-wrap items-end gap-3" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 8px rgba(9,20,38,0.04)' }}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>유형</label>
+              <select
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D', backgroundColor: '#FFFFFF' }}
+                value={feedbackFilter.feedbackType}
+                onChange={(e) => setFeedbackFilter((f) => ({ ...f, feedbackType: e.target.value }))}
+              >
+                <option value="">전체 유형</option>
+                {Object.entries(feedbackTypeLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>시작일</label>
+              <input
+                type="date"
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D' }}
+                value={feedbackFilter.from}
+                onChange={(e) => setFeedbackFilter((f) => ({ ...f, from: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: '#45474C' }}>종료일</label>
+              <input
+                type="date"
+                className="rounded-lg px-3 py-2 text-sm border"
+                style={{ borderColor: '#DCD9DB', color: '#1B1B1D' }}
+                value={feedbackFilter.to}
+                onChange={(e) => setFeedbackFilter((f) => ({ ...f, to: e.target.value }))}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadFeedbacks(feedbackFilter)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >검색</button>
+              <button
+                onClick={() => {
+                  const reset = { feedbackType: '', from: '', to: '' }
+                  setFeedbackFilter(reset)
+                  loadFeedbacks(reset)
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold"
+                style={btnSecondary}
+              >초기화</button>
+            </div>
+            <div className="flex justify-end flex-1">
+              <button
+                onClick={() => { setEditFeedback(null); setFeedbackForm({ feedbackType: 'GENERAL', content: '' }); setFeedbackModal(true) }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
+                style={btnPrimary}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                피드백 작성
+              </button>
+            </div>
           </div>
           <div className="space-y-4">
             {feedbacks.length === 0 ? (
