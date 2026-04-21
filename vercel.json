@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://software-design-backend-263289563004.asia-northeast3.run.app/api/v1/:path*"
+    }
+  ]
+}

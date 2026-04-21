@@ -14,12 +14,6 @@ const feedbackTypeLabel: Record<string, string> = {
 const gradeLevelColor: Record<string, 'green' | 'blue' | 'yellow' | 'red' | 'gray'> = {
   A: 'green', B: 'blue', C: 'yellow', D: 'red', E: 'gray',
 }
-const recordTypeLabel: Record<string, string> = {
-  PRESENT: '출석', ABSENT: '결석', LATE: '지각', EARLY_LEAVE: '조퇴', SICK: '병결',
-}
-const recordTypeColor: Record<string, 'green' | 'red' | 'yellow' | 'gray'> = {
-  PRESENT: 'green', ABSENT: 'red', LATE: 'yellow', EARLY_LEAVE: 'yellow', SICK: 'gray',
-}
 
 export default function StudentDashboardPage() {
   const [info, setInfo] = useState<MyInfoResponse | null>(null)
@@ -54,11 +48,11 @@ export default function StudentDashboardPage() {
   }, [])
 
   const attendanceSummary = {
-    출석: records.filter((r) => r.recordType === 'PRESENT').length,
-    결석: records.filter((r) => r.recordType === 'ABSENT').length,
-    지각: records.filter((r) => r.recordType === 'LATE').length,
-    조퇴: records.filter((r) => r.recordType === 'EARLY_LEAVE').length,
-    병결: records.filter((r) => r.recordType === 'SICK').length,
+    출석: records.reduce((sum, r) => sum + (r.attendanceDays ?? 0), 0),
+    결석: records.reduce((sum, r) => sum + (r.absenceDays ?? 0), 0),
+    지각: records.reduce((sum, r) => sum + (r.lateDays ?? 0), 0),
+    조퇴: records.reduce((sum, r) => sum + (r.earlyLeaveDays ?? 0), 0),
+    봉사: records.reduce((sum, r) => sum + (r.volunteerHours ?? 0), 0),
   }
 
   if (loading) return (
@@ -190,34 +184,28 @@ export default function StudentDashboardPage() {
           </div>
 
           {/* 출결 목록 */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 12px rgba(9,20,38,0.06)' }}>
-            <table className="w-full">
-              <thead>
-                <tr style={{ backgroundColor: '#F5F3F4' }}>
-                  {['날짜', '구분', '사유'].map((h) => (
-                    <th key={h} className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#45474C', letterSpacing: '0.05em' }}>{h}</th>
+          <div className="space-y-4">
+            {records.length === 0 ? (
+              <div className="rounded-xl py-12 text-center text-sm" style={{ backgroundColor: '#FFFFFF', color: '#45474C', boxShadow: '0px 2px 8px rgba(9,20,38,0.04)' }}>출결 기록이 없습니다.</div>
+            ) : records.map((r) => (
+              <div key={r.id} className="rounded-xl p-5" style={{ backgroundColor: '#FFFFFF', boxShadow: '0px 2px 8px rgba(9,20,38,0.04)' }}>
+                <h4 className="text-sm font-bold font-display mb-3" style={{ color: '#1B1B1D' }}>{r.year}년 {r.semester}학기</h4>
+                <div className="grid grid-cols-4 gap-3 text-sm text-center">
+                  {[
+                    ['출석', r.attendanceDays, '일'],
+                    ['결석', r.absenceDays, '일'],
+                    ['지각', r.lateDays, '회'],
+                    ['조퇴', r.earlyLeaveDays, '회'],
+                  ].map(([label, val, unit]) => (
+                    <div key={label as string} className="rounded-lg p-3" style={{ backgroundColor: '#F5F3F4' }}>
+                      <p className="text-xs" style={{ color: '#45474C' }}>{label}</p>
+                      <p className="font-bold font-display mt-1 text-base" style={{ color: '#091426' }}>{val}<span className="text-xs font-normal ml-0.5" style={{ color: '#45474C' }}>{unit}</span></p>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-12 text-center text-sm" style={{ color: '#45474C' }}>출결 기록이 없습니다.</td></tr>
-                ) : records.map((r) => (
-                  <tr
-                    key={r.id}
-                    style={{ borderTop: '1px solid #F0EDEF' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F5F3F4' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                  >
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#45474C' }}>{r.recordDate}</td>
-                    <td className="px-4 py-3.5">
-                      <Badge variant={recordTypeColor[r.recordType]}>{recordTypeLabel[r.recordType]}</Badge>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm" style={{ color: '#45474C' }}>{r.reason ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </div>
+                {r.specialNote && <p className="mt-3 text-xs rounded-lg p-3" style={{ color: '#1B1B1D', backgroundColor: '#F5F3F4' }}>{r.specialNote}</p>}
+              </div>
+            ))}
           </div>
         </div>
       )}
