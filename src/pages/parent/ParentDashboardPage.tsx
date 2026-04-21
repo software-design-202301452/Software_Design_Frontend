@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import { parentApi } from '../../api/parent'
-import { gradeApi } from '../../api/grade'
-import { feedbackApi } from '../../api/feedback'
 import type { MyStudentResponse, GradeResponse, FeedbackResponse } from '../../types'
 import Badge from '../../components/common/Badge'
 import GradeRadarChart from '../../components/charts/GradeRadarChart'
@@ -24,14 +22,14 @@ export default function ParentDashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const s = await parentApi.getMyStudent()
-        setStudent(s.data.data)
-        const [g, f] = await Promise.all([
-          gradeApi.getGradesByStudent(s.data.data.studentId),
-          feedbackApi.getFeedbacks({ studentId: s.data.data.studentId }),
+        const [s, g, f] = await Promise.all([
+          parentApi.getMyStudent(),
+          parentApi.getStudentGrades(),
+          parentApi.getStudentFeedbacks(),
         ])
+        setStudent(s.data.data)
         setGrades(g.data.data)
-        setFeedbacks(f.data.data.filter((fb) => fb.published))
+        setFeedbacks(f.data.data)
       } catch {
         // ignore
       } finally {

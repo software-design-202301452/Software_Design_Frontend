@@ -4,6 +4,9 @@ import type {
   StudentDetailResponse,
   RegisterStudentRequest,
   UpdateStudentRequest,
+  GradeResponse,
+  FeedbackResponse,
+  StudentRecordResponse,
   ApiResponse,
 } from '../types'
 
@@ -19,4 +22,14 @@ export const studentApi = {
 
   updateStudent: (studentId: number, data: UpdateStudentRequest) =>
     api.put<ApiResponse<StudentSummaryResponse>>(`/students/${studentId}`, data),
+
+  // 학생 본인 전용 엔드포인트
+  getMyGrades: () =>
+    api.get<ApiResponse<GradeResponse[]>>('/student/my-grades'),
+
+  getMyFeedbacks: () =>
+    api.get<ApiResponse<FeedbackResponse[]>>('/student/my-feedbacks'),
+
+  getMyRecords: () =>
+    api.get<ApiResponse<StudentRecordResponse[]>>('/student/my-records'),
 }

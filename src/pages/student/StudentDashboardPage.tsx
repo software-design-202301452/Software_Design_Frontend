@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { userApi } from '../../api/user'
-import { gradeApi } from '../../api/grade'
-import { feedbackApi } from '../../api/feedback'
-import { studentRecordApi } from '../../api/studentRecord'
+import { studentApi } from '../../api/student'
 import type { MyInfoResponse, GradeResponse, FeedbackResponse, StudentRecordResponse } from '../../types'
 import Badge from '../../components/common/Badge'
 import GradeRadarChart from '../../components/charts/GradeRadarChart'
@@ -26,15 +24,13 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await userApi.getMyInfo()
-        const me = res.data.data
-        setInfo(me)
-        // me.id는 학생 테이블의 PK (studentId)
-        const [g, f, r] = await Promise.all([
-          gradeApi.getGradesByStudent(me.id),
-          feedbackApi.getFeedbacks({ studentId: me.id }),
-          studentRecordApi.getStudentRecords(me.id),
+        const [res, g, f, r] = await Promise.all([
+          userApi.getMyInfo(),
+          studentApi.getMyGrades(),
+          studentApi.getMyFeedbacks(),
+          studentApi.getMyRecords(),
         ])
+        setInfo(res.data.data)
         setGrades(g.data.data)
         setFeedbacks(f.data.data.filter((fb) => fb.published))
         setRecords(r.data.data)
