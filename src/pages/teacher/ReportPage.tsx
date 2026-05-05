@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { studentApi } from '../../api/student'
 import { reportApi } from '../../api/report'
 import type {
@@ -19,6 +19,7 @@ export default function ReportPage() {
   const [feedbackReport, setFeedbackReport] = useState<FeedbackReportResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [studentsLoaded, setStudentsLoaded] = useState(false)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   const loadStudents = async () => {
     if (studentsLoaded) return
@@ -58,29 +59,33 @@ export default function ReportPage() {
     }
   }
 
-  const exportGradePdf = async () => {
-    if (!gradeReport) return
+  const exportPdf = async () => {
+    if (!reportRef.current) return
+    const html2canvas = (await import('html2canvas')).default
     const { default: jsPDF } = await import('jspdf')
-    const { default: autoTable } = await import('jspdf-autotable')
-    const doc = new jsPDF()
-    doc.text(`성적 보고서 - ${gradeReport.studentName}`, 14, 16)
-    doc.setFontSize(10)
-    doc.text(`생성일: ${gradeReport.generatedAt}`, 14, 24)
-    doc.text(`전체 평균: ${gradeReport.overallAverage.toFixed(1)}점`, 14, 30)
-    autoTable(doc, {
-      startY: 36,
-      head: [['과목', '년도', '학기', '점수', '총점', '평균', '등급']],
-      body: gradeReport.grades.map(g => [
-        g.subjectName,
-        g.year,
-        g.semester,
-        g.score,
-        g.totalScore,
-        g.average.toFixed(1),
-        g.gradeLevel,
-      ]),
+
+    const canvas = await html2canvas(reportRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#1E293B',
     })
-    doc.save(`성적보고서_${gradeReport.studentName}.pdf`)
+    const imgData = canvas.toDataURL('image/png')
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const imgW = pageW
+    const imgH = (canvas.height * imgW) / canvas.width
+
+    let posY = 0
+    while (posY < imgH) {
+      if (posY > 0) pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, -posY, imgW, imgH)
+      posY += pageH
+    }
+
+    const studentName = gradeReport?.studentName ?? counselingReport?.studentName ?? feedbackReport?.studentName ?? ''
+    const prefix = gradeReport ? '성적보고서' : counselingReport ? '상담보고서' : '피드백보고서'
+    pdf.save(`${prefix}_${studentName}.pdf`)
   }
 
   const exportGradeExcel = async () => {
@@ -102,27 +107,6 @@ export default function ReportPage() {
     XLSX.writeFile(wb, `성적보고서_${gradeReport.studentName}.xlsx`)
   }
 
-  const exportCounselingPdf = async () => {
-    if (!counselingReport) return
-    const { default: jsPDF } = await import('jspdf')
-    const { default: autoTable } = await import('jspdf-autotable')
-    const doc = new jsPDF()
-    doc.text(`상담 기록 보고서 - ${counselingReport.studentName}`, 14, 16)
-    doc.setFontSize(10)
-    doc.text(`생성일: ${counselingReport.generatedAt}  총 상담 수: ${counselingReport.totalCount}건`, 14, 24)
-    autoTable(doc, {
-      startY: 30,
-      head: [['상담일', '교사', '내용', '다음 계획', '다음 상담일']],
-      body: counselingReport.counselings.map(c => [
-        c.counselingDate,
-        c.teacherName,
-        c.content.substring(0, 50),
-        c.nextPlan ?? '-',
-        c.nextCounselingDate ?? '-',
-      ]),
-    })
-    doc.save(`상담보고서_${counselingReport.studentName}.pdf`)
-  }
 
   const exportCounselingExcel = async () => {
     if (!counselingReport) return
@@ -141,27 +125,6 @@ export default function ReportPage() {
     XLSX.writeFile(wb, `상담보고서_${counselingReport.studentName}.xlsx`)
   }
 
-  const exportFeedbackPdf = async () => {
-    if (!feedbackReport) return
-    const { default: jsPDF } = await import('jspdf')
-    const { default: autoTable } = await import('jspdf-autotable')
-    const doc = new jsPDF()
-    doc.text(`피드백 보고서 - ${feedbackReport.studentName}`, 14, 16)
-    doc.setFontSize(10)
-    doc.text(`생성일: ${feedbackReport.generatedAt}  총 피드백 수: ${feedbackReport.totalCount}건`, 14, 24)
-    autoTable(doc, {
-      startY: 30,
-      head: [['유형', '교사', '내용', '공개여부', '작성일']],
-      body: feedbackReport.feedbacks.map(f => [
-        f.feedbackType,
-        f.teacherName,
-        f.content.substring(0, 50),
-        f.published ? '공개' : '비공개',
-        f.createdAt.substring(0, 10),
-      ]),
-    })
-    doc.save(`피드백보고서_${feedbackReport.studentName}.pdf`)
-  }
 
   const exportFeedbackExcel = async () => {
     if (!feedbackReport) return
@@ -239,7 +202,7 @@ export default function ReportPage() {
 
       {/* 보고서 결과 */}
       {currentReport && (
-        <div className="rounded-xl p-6" style={{ backgroundColor: '#1E293B' }}>
+        <div ref={reportRef} className="rounded-xl p-6" style={{ backgroundColor: '#1E293B' }}>
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -256,7 +219,7 @@ export default function ReportPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={gradeReport ? exportGradePdf : counselingReport ? exportCounselingPdf : exportFeedbackPdf}
+                onClick={exportPdf}
                 className="flex items-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium text-white transition-all"
                 style={{ backgroundColor: '#DC2626' }}
               >
